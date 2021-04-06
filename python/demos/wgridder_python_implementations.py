@@ -20,6 +20,8 @@ import numpy as np
 import scipy.fft
 from ducc0.wgridder import dirty2ms as dirty2ms_ducc
 from ducc0.wgridder import ms2dirty as ms2dirty_ducc
+from ducc0.wgridder.experimental import dirty2vis as dirty2vis_ducc
+from ducc0.wgridder.experimental import vis2dirty as vis2dirty_ducc
 from numba import njit
 from scipy.special.orthogonal import p_roots
 
@@ -306,6 +308,8 @@ def main():
     # Adapter to old interface
     ms2dirty_ducc1 = lambda uvw, freq, ms, nxdirty, nydirty, pixsizex, pixsizey, epsilon, do_wgridding: ms2dirty_ducc(uvw, freq, ms, None, nxdirty, nydirty, pixsizex, pixsizey, 0, 0, epsilon, do_wgridding)
     dirty2ms_ducc1 = lambda uvw, freq, dirty, pixsizex, pixsizey, epsilon, do_wgridding: dirty2ms_ducc(uvw, freq, dirty, None, pixsizex, pixsizey, 0, 0, epsilon, do_wgridding)
+    ms2dirty_ducc2 = lambda uvw, freq, ms, nxdirty, nydirty, pixsizex, pixsizey, epsilon, do_wgridding: vis2dirty_ducc(uvw=uvw, freq=freq, vis=ms, npix_x=nxdirty, npix_y=nydirty, pixsize_x=pixsizex, pixsize_y=pixsizey, epsilon=epsilon, do_wgridding=do_wgridding)
+    dirty2ms_ducc2 = lambda uvw, freq, dirty, pixsizex, pixsizey, epsilon, do_wgridding: dirty2vis_ducc(uvw=uvw, freq=freq, dirty=dirty, pixsize_x=pixsizex, pixsize_y=pixsizey, epsilon=epsilon, do_wgridding=do_wgridding)
     for f in (ms2dirty_dft, ms2dirty_python_slow, ms2dirty_python_fast, ms2dirty_numba, ms2dirty_ducc1):
         t0 = time()
         dirty = f(uvw, freq, ms, nxdirty, nydirty, pixsizex, pixsizey, epsilon, do_wgridding)
