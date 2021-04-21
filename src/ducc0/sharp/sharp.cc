@@ -412,7 +412,6 @@ sharp_job::sharp_job (sharp_jobtype type_,
   if (type==SHARP_WY) { type=SHARP_ALM2MAP; flags|=SHARP_USE_WEIGHTS; }
 
   MR_assert(spin<=ainfo.lmax(), "bad spin");
-  cout << "nmaps(): " << nmaps() << "\n";
   // MR_assert(alm.size()==nalm(), "incorrect # of a_lm components");
   // MR_assert(map.size()==nmaps(), "incorrect # of a_lm components");
   }
