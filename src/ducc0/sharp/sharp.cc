@@ -358,7 +358,7 @@ DUCC0_NOINLINE void sharp_job::execute()
   detail_sht::SHT_mode mode = (type==SHARP_MAP2ALM) ? detail_sht::MAP2ALM : 
                              ((type==SHARP_ALM2MAP) ? detail_sht::ALM2MAP : detail_sht::ALM2MAP_DERIV1);
 /* chunk loop */
-  print_mav(phase, 2*chunksize, mmax+1, nmaps());
+  // print_mav(phase, 2*chunksize, mmax+1, nmaps());
   for (size_t chunk=0; chunk<nchunks; ++chunk)
     {
     size_t llim=chunk*chunksize, ulim=min(llim+chunksize,ginfo.npairs());
