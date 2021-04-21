@@ -323,6 +323,20 @@ DUCC0_NOINLINE void sharp_job::phase2map (size_t mmax, size_t llim, size_t ulim,
     }); /* end of parallel region */
   }
 
+void print_mav(mav<dcmplx, 3> &phase, int x, int y, int z){
+  cout << "Starting printing....\n";
+  for (int xi = 0; xi < x; ++xi){
+    for (int yi = 0; yi < y; ++yi){
+      for (int zi = 0; zi < z; ++zi){
+        cout << phase(xi, yi, zi) << " ";
+      }
+      cout << "\n";
+    }
+  cout << "\n";
+  }
+  cout << "End\n";
+}
+
 DUCC0_NOINLINE void sharp_job::execute()
   {
   size_t lmax = ainfo.lmax(),
@@ -344,6 +358,7 @@ DUCC0_NOINLINE void sharp_job::execute()
   detail_sht::SHT_mode mode = (type==SHARP_MAP2ALM) ? detail_sht::MAP2ALM : 
                              ((type==SHARP_ALM2MAP) ? detail_sht::ALM2MAP : detail_sht::ALM2MAP_DERIV1);
 /* chunk loop */
+  print_mav(phase, 2*chunksize, mmax+1, nmaps());
   for (size_t chunk=0; chunk<nchunks; ++chunk)
     {
     size_t llim=chunk*chunksize, ulim=min(llim+chunksize,ginfo.npairs());
@@ -380,6 +395,7 @@ DUCC0_NOINLINE void sharp_job::execute()
       }); /* end of parallel region */
 
 /* phase->map where necessary */
+    // print_mav(phase, 2*chunksize, mmax+1, nmaps());
     phase2map (mmax, llim, ulim, phase);
     } /* end of chunk loop */
   }
@@ -396,8 +412,9 @@ sharp_job::sharp_job (sharp_jobtype type_,
   if (type==SHARP_WY) { type=SHARP_ALM2MAP; flags|=SHARP_USE_WEIGHTS; }
 
   MR_assert(spin<=ainfo.lmax(), "bad spin");
-  MR_assert(alm.size()==nalm(), "incorrect # of a_lm components");
-  MR_assert(map.size()==nmaps(), "incorrect # of a_lm components");
+  cout << "nmaps(): " << nmaps() << "\n";
+  // MR_assert(alm.size()==nalm(), "incorrect # of a_lm components");
+  // MR_assert(map.size()==nmaps(), "incorrect # of a_lm components");
   }
 
 void sharp_execute (sharp_jobtype type, size_t spin, const vector<any> &alm,
