@@ -185,7 +185,7 @@ struct ringhelper
 
 class sharp_job
   {
-  private:
+  public:
     std::vector<std::any> alm;
     std::vector<std::any> map;
     sharp_jobtype type;
