@@ -36,6 +36,10 @@
 #include "ducc0/infra/error_handling.h"
 #include "ducc0/math/math_utils.h"
 
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
 namespace ducc0 {
 
 namespace detail_sharp {
@@ -91,6 +95,71 @@ sharp_standard_geom_info::sharp_standard_geom_info(size_t nrings, const size_t *
         (ring[a.r1].cth>ring[b.r1].cth));
     return ring[a.r1].nph<ring[b.r1].nph;
     });
+
+  // Added part: make numpy array buffer info
+  theta_array = a_d_c(py::buffer_info(
+      &ring[0].theta, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  phi0_array = a_d_c(py::buffer_info(
+      &ring[0].phi0, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  weight_array = a_d_c(py::buffer_info(
+      &ring[0].weight, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  cth_array = a_d_c(py::buffer_info(
+      &ring[0].cth, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  sth_array = a_d_c(py::buffer_info(
+      &ring[0].sth, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  nph_array = a_i_c(py::buffer_info(
+      &ring[0].nph, // pointer to data
+      sizeof(size_t),
+      py::format_descriptor<size_t>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  ofs_array = a_p_c(py::buffer_info(
+      &ring[0].ofs, // pointer to data
+      sizeof(ptrdiff_t),
+      py::format_descriptor<ptrdiff_t>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
   }
 
 template<typename T> void sharp_standard_geom_info::tclear(T *map) const
@@ -154,7 +223,7 @@ void sharp_standard_geom_info::get_ring(bool weighted, size_t iring, const any &
   else MR_fail("bad map data type",map.type().name());
   }
 
-unique_ptr<sharp_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
+unique_ptr<sharp_standard_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
   const size_t *rings, const double *weight)
   {
   size_t npix=nside*nside*12;

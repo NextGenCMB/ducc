@@ -32,19 +32,35 @@
 #include <string>
 #include "ducc0/sharp/sharp.h"
 
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+using a_d_c = py::array_t<double, py::array::c_style | py::array::forcecast>;
+using a_i_c = py::array_t<size_t, py::array::c_style | py::array::forcecast>;
+using a_p_c = py::array_t<ptrdiff_t, py::array::c_style | py::array::forcecast>;
+
 namespace ducc0 {
 
 namespace detail_sharp {
 
 class sharp_standard_geom_info: public sharp_geom_info
   {
-  private:
+  public:
     struct Tring
       {
       double theta, phi0, weight, cth, sth;
       ptrdiff_t ofs;
       size_t nph;
       };
+
+    a_d_c theta_array;
+    a_d_c phi0_array;
+    a_d_c weight_array;
+    a_d_c cth_array;
+    a_d_c sth_array;
+    a_i_c nph_array;
+    a_p_c ofs_array;
+
     std::vector<Tring> ring;
     std::vector<Tpair> pair_;
     ptrdiff_t stride;
@@ -52,6 +68,8 @@ class sharp_standard_geom_info: public sharp_geom_info
     template<typename T> void tclear (T *map) const;
     template<typename T> void tget (bool weighted, size_t iring, const T *map, mav<double,1> &ringtmp) const;
     template<typename T> void tadd (bool weighted, size_t iring, const mav<double,1> &ringtmp, T *map) const;
+
+
 
   public:
 /*! Creates a geometry information from a set of ring descriptions.
@@ -93,7 +111,7 @@ class sharp_standard_geom_info: public sharp_geom_info
     \note if \a weight is a null pointer, all weights are assumed to be 1.
     \note if \a rings is a null pointer, take all rings
     \ingroup geominfogroup */
-std::unique_ptr<sharp_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
+std::unique_ptr<sharp_standard_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
   const size_t *rings=nullptr, const double *weight=nullptr);
 
 /*! Creates a geometry information describing a HEALPix map with an
@@ -101,7 +119,7 @@ std::unique_ptr<sharp_geom_info> sharp_make_subset_healpix_geom_info (size_t nsi
     weights and must have \a 2*nside entries.
     \note if \a weight is a null pointer, all weights are assumed to be 1.
     \ingroup geominfogroup */
-std::unique_ptr<sharp_geom_info> sharp_make_weighted_healpix_geom_info (size_t nside, ptrdiff_t stride,
+std::unique_ptr<sharp_standard_geom_info> sharp_make_weighted_healpix_geom_info (size_t nside, ptrdiff_t stride,
   const double *weight=nullptr)
   { return sharp_make_subset_healpix_geom_info(nside, stride, 4*nside-1, nullptr, weight); }
 
@@ -109,7 +127,7 @@ std::unique_ptr<sharp_geom_info> sharp_make_weighted_healpix_geom_info (size_t n
 /*! Creates a geometry information describing a HEALPix map with an
     Nside parameter \a nside.
     \ingroup geominfogroup */
-static inline std::unique_ptr<sharp_geom_info> sharp_make_healpix_geom_info (size_t nside, ptrdiff_t stride)
+static inline std::unique_ptr<sharp_standard_geom_info> sharp_make_healpix_geom_info (size_t nside, ptrdiff_t stride)
   { return sharp_make_weighted_healpix_geom_info (nside, stride, nullptr); }
 
 /*! Creates a geometry information describing a map with \a nrings
