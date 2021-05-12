@@ -65,6 +65,7 @@ sharp_standard_geom_info::sharp_standard_geom_info(size_t nrings, const size_t *
     ring[m].nph = nph[m];
     if (nphmax_<nph[m]) nphmax_=nph[m];
     }
+  if (nphmax_ < 2) nphmax_ = 2;
   sort(ring.begin(), ring.end(),[](const Tring &a, const Tring &b)
     { return (a.sth<b.sth); });
   while (pos<nrings)

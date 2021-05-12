@@ -97,6 +97,7 @@ struct ringhelper
     mav<double,1> &data, size_t mmax, const mav<dcmplx,1> &phase)
     {
     size_t nph = info.nph(iring);
+    if (nph == 1) nph ++;
 
     update (nph, mmax, info.phi0(iring));
 
