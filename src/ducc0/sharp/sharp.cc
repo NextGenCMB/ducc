@@ -63,6 +63,20 @@ static void get_chunk_info (size_t ndata, size_t nmult, size_t &nchunks, size_t 
   nchunks = (ndata+chunksize-1)/chunksize;
   }
 
+void print_mav(mav<dcmplx, 3> &phase, int x, int y, int z){
+  cout << "Starting printing....\n";
+  for (int xi = 0; xi < x; ++xi){
+    for (int yi = 0; yi < y; ++yi){
+      for (int zi = 0; zi < z; ++zi){
+        cout << phase(xi, yi, zi) << " ";
+      }
+      cout << "\n";
+    }
+  cout << "\n";
+  }
+  cout << "End\n";
+}
+
 struct ringhelper
   {
   double phi0_;
