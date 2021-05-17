@@ -149,7 +149,7 @@ static inline std::unique_ptr<sharp_standard_geom_info> sharp_make_healpix_geom_
               i.e. theta_i = i*pi/nrings
      - "MW" : rings are placed according to the McEwen-Wiaux scheme,
               i.e. theta_i = (i+0.5)*2*pi/(2*nrings-1) */
-std::unique_ptr<sharp_geom_info> sharp_make_2d_geom_info
+std::unique_ptr<sharp_standard_geom_info> sharp_make_2d_geom_info
   (size_t nrings, size_t ppring, double phi0, ptrdiff_t stride_lon,
   ptrdiff_t stride_lat, const std::string &type, bool with_weight=true);
 }

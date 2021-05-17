@@ -200,7 +200,7 @@ struct ringhelper
 
 class sharp_job
   {
-  private:
+  public:
     std::vector<std::any> alm;
     std::vector<std::any> map;
     sharp_jobtype type;
@@ -290,6 +290,7 @@ class sharp_job
     //FIXME: set phase to zero if not SHARP_MAP2ALM?
     DUCC0_NOINLINE void map2phase (size_t mmax, size_t llim, size_t ulim, mav<dcmplx,3> &phase)
       {
+      cout << phase.shape(0) << " " << phase.shape(1) << " " << phase.shape(2) << endl;
       if (type != SHARP_MAP2ALM) return;
       ducc0::execDynamic(ulim-llim, nthreads, 1, [&](ducc0::Scheduler &sched)
         {

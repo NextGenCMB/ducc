@@ -389,7 +389,7 @@ void get_gridinfo(const string &type,
     MR_fail("unsupported grid type");
   }
 
-unique_ptr<sharp_geom_info> sharp_make_2d_geom_info
+unique_ptr<sharp_standard_geom_info> sharp_make_2d_geom_info
   (size_t nrings, size_t ppring, double phi0, ptrdiff_t stride_lon,
   ptrdiff_t stride_lat, const string &type, bool with_weight)
   {
