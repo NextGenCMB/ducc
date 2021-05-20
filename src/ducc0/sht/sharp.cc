@@ -35,6 +35,10 @@
 #include "ducc0/infra/error_handling.h"
 #include "ducc0/sht/sht.h"
 
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
 namespace ducc0 {
 
 namespace detail_sharp {
@@ -63,7 +67,7 @@ static void get_chunk_info (size_t ndata, size_t nmult, size_t &nchunks, size_t 
 
 class sharp_job
   {
-  private:
+  public:
     std::vector<std::any> alm;
     std::vector<std::any> map;
     sharp_jobtype type;
@@ -429,6 +433,7 @@ sharp_standard_geom_info::sharp_standard_geom_info(size_t nrings, const size_t *
     ring[m].nph = nph[m];
     if (nphmax_<nph[m]) nphmax_=nph[m];
     }
+  if (nphmax_ < 2) nphmax_ = 2;
   sort(ring.begin(), ring.end(),[](const Tring &a, const Tring &b)
     { return (a.sth<b.sth); });
   while (pos<nrings)
@@ -459,6 +464,70 @@ sharp_standard_geom_info::sharp_standard_geom_info(size_t nrings, const size_t *
         (ring[a.r1].cth>ring[b.r1].cth));
     return ring[a.r1].nph<ring[b.r1].nph;
     });
+
+  // Added part: make numpy array buffer info
+  theta_array = a_d_c(py::buffer_info(
+      &ring[0].theta, // pointer to data
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, // ndim
+      {nrings}, // size
+      {sizeof(ring[0])} // stride (size of struct Tring)
+    ), py::handle(py::none()));
+
+  phi0_array = a_d_c(py::buffer_info(
+      &ring[0].phi0,
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1,
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
+
+  weight_array = a_d_c(py::buffer_info(
+      &ring[0].weight,
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1,
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
+
+  cth_array = a_d_c(py::buffer_info(
+      &ring[0].cth,
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1,
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
+
+  sth_array = a_d_c(py::buffer_info(
+      &ring[0].sth,
+      sizeof(double),
+      py::format_descriptor<double>::format(),
+      1, 
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
+
+  nph_array = a_i_c(py::buffer_info(
+      &ring[0].nph,
+      sizeof(size_t),
+      py::format_descriptor<size_t>::format(),
+      1,
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
+
+  ofs_array = a_p_c(py::buffer_info(
+      &ring[0].ofs,
+      sizeof(ptrdiff_t),
+      py::format_descriptor<ptrdiff_t>::format(),
+      1,
+      {nrings},
+      {sizeof(ring[0])}
+    ), py::handle(py::none()));
   }
 
 template<typename T> void sharp_standard_geom_info::tclear(T *map) const
@@ -522,7 +591,7 @@ void sharp_standard_geom_info::get_ring(bool weighted, size_t iring, const any &
   else MR_fail("bad map data type",map.type().name());
   }
 
-unique_ptr<sharp_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
+unique_ptr<sharp_standard_geom_info> sharp_make_subset_healpix_geom_info (size_t nside, ptrdiff_t stride, size_t nrings,
   const size_t *rings, const double *weight)
   {
   size_t npix=nside*nside*12;
@@ -687,7 +756,7 @@ void get_gridinfo(const string &type,
     MR_fail("unsupported grid type");
   }
 
-unique_ptr<sharp_geom_info> sharp_make_2d_geom_info
+unique_ptr<sharp_standard_geom_info> sharp_make_2d_geom_info
   (size_t nrings, size_t ppring, double phi0, ptrdiff_t stride_lon,
   ptrdiff_t stride_lat, const string &type, bool with_weight)
   {

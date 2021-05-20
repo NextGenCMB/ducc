@@ -349,6 +349,8 @@ struct ringhelper
   template<typename T> DUCC0_NOINLINE void ring2phase (size_t nph, double phi0,
     mav<double,1> &data, size_t mmax, mav<complex<T>,1> &phase)
     {
+    bool changed = false;
+    if (nph == 1) {nph ++; changed = true;}
     update (nph, mmax, -phi0);
 
     plan->exec (&(data.v(1)), 1., true);
@@ -378,6 +380,7 @@ struct ringhelper
         phase.v(m)=complex<T>(val);
         }
       }
+    if (changed) nph-- ;
     }
   };
 
