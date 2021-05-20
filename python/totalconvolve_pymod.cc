@@ -15,14 +15,14 @@
  */
 
 /*
- *  Copyright (C) 2020 Max-Planck-Society
+ *  Copyright (C) 2020-2021 Max-Planck-Society
  *  Author: Martin Reinecke
  */
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include "ducc0/bindings/pybind_utils.h"
-#include "ducc0/sharp/totalconvolve.h"
+#include "ducc0/sht/totalconvolve.h"
 
 namespace ducc0 {
 
@@ -33,7 +33,7 @@ using namespace std;
 namespace py = pybind11;
 auto None = py::none();
 
-template<typename T> class PyConvolverPlan: public ConvolverPlan<T>
+template<typename T> class Py_ConvolverPlan: public ConvolverPlan<T>
   {
   private:
     using ConvolverPlan<T>::lmax;
@@ -50,79 +50,79 @@ template<typename T> class PyConvolverPlan: public ConvolverPlan<T>
     using ConvolverPlan<T>::Ntheta;
     using ConvolverPlan<T>::Nphi;
     using ConvolverPlan<T>::Npsi;
-    vector<size_t> pyGetPatchInfo(T theta_lo, T theta_hi, T phi_lo, T phi_hi)
+    vector<size_t> Py_getPatchInfo(T theta_lo, T theta_hi, T phi_lo, T phi_hi)
       { return getPatchInfo(theta_lo, theta_hi, phi_lo, phi_hi); }
-    void pyGetPlane(const py::array &py_slm, const py::array &py_blm,
-      size_t mbeam, py::array &py_planes) const
+    void Py_getPlane(const py::array &slm_, const py::array &blm_,
+      size_t mbeam, py::array &planes_) const
       {
-      auto slm = to_mav<complex<T>,1>(py_slm);
-      auto blm = to_mav<complex<T>,1>(py_blm);
-      auto planes = to_mav<T,3>(py_planes, true);
+      auto slm = to_mav<complex<T>,1>(slm_);
+      auto blm = to_mav<complex<T>,1>(blm_);
+      auto planes = to_mav<T,3>(planes_, true);
       getPlane(slm, blm, mbeam, planes);
       }
-    void pyPrepPsi(const py::array &py_subcube) const
+    void Py_prepPsi(const py::array &subcube_) const
       {
-      auto subcube = to_mav<T,3>(py_subcube, true);
+      auto subcube = to_mav<T,3>(subcube_, true);
       prepPsi(subcube);
       }
-    void pyDeprepPsi(const py::array &py_subcube) const
+    void Py_deprepPsi(const py::array &subcube_) const
       {
-      auto subcube = to_mav<T,3>(py_subcube, true);
+      auto subcube = to_mav<T,3>(subcube_, true);
       deprepPsi(subcube);
       }
-    void pyinterpol(const py::array &pycube, size_t itheta0, size_t iphi0,
-      const py::array &pytheta, const py::array &pyphi, const py::array &pypsi,
-      py::array &pysignal)
+    void Py_interpol(const py::array &cube_, size_t itheta0, size_t iphi0,
+      const py::array &theta_, const py::array &phi_, const py::array &psi_,
+      py::array &signal_)
       {
-      auto cube = to_mav<T,3>(pycube, false);
-      auto theta = to_mav<T,1>(pytheta, false);
-      auto phi = to_mav<T,1>(pyphi, false);
-      auto psi = to_mav<T,1>(pypsi, false);
-      auto signal = to_mav<T,1>(pysignal, true);
+      auto cube = to_mav<T,3>(cube_, false);
+      auto theta = to_mav<T,1>(theta_, false);
+      auto phi = to_mav<T,1>(phi_, false);
+      auto psi = to_mav<T,1>(psi_, false);
+      auto signal = to_mav<T,1>(signal_, true);
       interpol(cube, itheta0, iphi0, theta, phi, psi, signal);
       }
-    void pydeinterpol(py::array &pycube, size_t itheta0, size_t iphi0,
-      const py::array &pytheta, const py::array &pyphi, const py::array &pypsi,
-      const py::array &pysignal)
+    void Py_deinterpol(py::array &cube_, size_t itheta0, size_t iphi0,
+      const py::array &theta_, const py::array &phi_, const py::array &psi_,
+      const py::array &signal_)
       {
-      auto cube = to_mav<T,3>(pycube, true);
-      auto theta = to_mav<T,1>(pytheta, false);
-      auto phi = to_mav<T,1>(pyphi, false);
-      auto psi = to_mav<T,1>(pypsi, false);
-      auto signal = to_mav<T,1>(pysignal, false);
+      auto cube = to_mav<T,3>(cube_, true);
+      auto theta = to_mav<T,1>(theta_, false);
+      auto phi = to_mav<T,1>(phi_, false);
+      auto psi = to_mav<T,1>(psi_, false);
+      auto signal = to_mav<T,1>(signal_, false);
       deinterpol(cube, itheta0, iphi0, theta, phi, psi, signal);
       }
-    void pyUpdateSlm(py::array &py_slm, const py::array &py_blm,
-      size_t mbeam, py::array &py_planes) const
+    void Py_updateSlm(py::array &slm_, const py::array &blm_,
+      size_t mbeam, py::array &planes_) const
       {
-      auto slm = to_mav<complex<T>,1>(py_slm, true);
-      auto blm = to_mav<complex<T>,1>(py_blm);
-      auto planes = to_mav<T,3>(py_planes, true);
+      auto slm = to_mav<complex<T>,1>(slm_, true);
+      auto blm = to_mav<complex<T>,1>(blm_);
+      auto planes = to_mav<T,3>(planes_, true);
       updateSlm(slm, blm, mbeam, planes);
       }
   };
 
 
-template<typename T> class PyInterpolator
+template<typename T> class Py_Interpolator
   {
   private:
     ConvolverPlan<T> conv;
     mav<T,4> cube;
 
   public:
-    PyInterpolator(const py::array &slm, const py::array &blm,
+    Py_Interpolator(const py::array &slm_, const py::array &blm_,
       bool separate, size_t lmax, size_t kmax, T epsilon, T ofactor, int nthreads)
       : conv(lmax, kmax, ofactor, epsilon, nthreads),
-        cube({(separate ? size_t(slm.shape(1)) : 1u), conv.Npsi(), conv.Ntheta(), conv.Nphi()})
+        cube({(separate ? size_t(slm_.shape(0)) : 1u), conv.Npsi(), conv.Ntheta(), conv.Nphi()})
       {
-      auto vslm = to_mav<complex<T>,2>(slm);
-      auto vblm = to_mav<complex<T>,2>(blm);
+      auto vslm = to_mav<complex<T>,2>(slm_);
+      auto vblm = to_mav<complex<T>,2>(blm_);
       if (separate)
-        for (size_t i=0; i<vslm.shape(1); ++i)
+        for (size_t i=0; i<vslm.shape(0); ++i)
           {
           auto planes = subarray<3>(cube, {i,0,0,0},{0, 1, MAXIDX, MAXIDX});
-          auto vslmi = subarray<2>(vslm, {0,i},{MAXIDX,1});
-          auto vblmi = subarray<2>(vblm, {0,i},{MAXIDX,1});
+          auto vslmi = subarray<2>(vslm, {i,0},{1,MAXIDX});
+          auto vblmi = subarray<2>(vblm, {i,0},{1,MAXIDX});
           conv.getPlane(vslmi, vblmi, 0, planes);
           for (size_t k=1; k<kmax+1; ++k)
             {
@@ -146,31 +146,30 @@ template<typename T> class PyInterpolator
         conv.prepPsi(subcube);
         }
       }
-    PyInterpolator(size_t lmax, size_t kmax, size_t ncomp_, T epsilon, T ofactor, int nthreads)
+    Py_Interpolator(size_t lmax, size_t kmax, size_t ncomp_, T epsilon, T ofactor, int nthreads)
       : conv(lmax, kmax, ofactor, epsilon, nthreads),
         cube({size_t(ncomp_), conv.Npsi(), conv.Ntheta(), conv.Nphi()})
-      {
-      }
+      {}
 
-    py::array pyinterpol(const py::array &ptg) const
+    py::array Py_Interpol(const py::array &ptg) const
       {
       auto ptg2 = to_mav<T,2>(ptg);
       auto ptheta = subarray<1>(ptg2, {0,0},{MAXIDX,0});
       auto pphi = subarray<1>(ptg2, {0,1},{MAXIDX,0});
       auto ppsi = subarray<1>(ptg2, {0,2},{MAXIDX,0});
       size_t ncomp = cube.shape(0);
-      auto res = make_Pyarr<T>({ptg2.shape(0),ncomp});
+      auto res = make_Pyarr<T>({ncomp,ptg2.shape(0)});
       auto res2 = to_mav<T,2>(res,true);
       for (size_t i=0; i<ncomp; ++i)
         {
         auto subcube = subarray<3>(cube, {i,0,0,0},{0, MAXIDX, MAXIDX, MAXIDX});
-        auto subres = subarray<1>(res2, {0,i},{MAXIDX,0});
+        auto subres = subarray<1>(res2, {i,0},{0,MAXIDX});
         conv.interpol(subcube, 0, 0, ptheta, pphi, ppsi, subres);
         }
       return move(res);
       }
 
-    void pydeinterpol(const py::array &ptg, const py::array &data)
+    void Py_deinterpol(const py::array &ptg, const py::array &data)
       {
       auto ptg2 = to_mav<T,2>(ptg);
       auto ptheta = subarray<1>(ptg2, {0,0},{MAXIDX,0});
@@ -181,15 +180,15 @@ template<typename T> class PyInterpolator
       for (size_t i=0; i<ncomp; ++i)
         {
         auto subcube = subarray<3>(cube, {i,0,0,0},{0, MAXIDX, MAXIDX, MAXIDX});
-        auto subdata = subarray<1>(data2, {0,i},{MAXIDX,0});
+        auto subdata = subarray<1>(data2, {i,0},{0,MAXIDX});
         conv.deinterpol(subcube, 0, 0, ptheta, pphi, ppsi, subdata);
         }
       }
-    py::array pygetSlm(const py::array &blm_)
+    py::array Py_getSlm(const py::array &blm_)
       {
       size_t lmax=conv.Lmax(), kmax=conv.Kmax();
       auto vblm = to_mav<complex<T>,2>(blm_);
-      size_t ncomp = vblm.shape(1);
+      size_t ncomp = vblm.shape(0);
       bool separate = cube.shape(0)>1;
       if (separate) MR_assert(ncomp==cube.shape(0), "dimension mismatch");
       for (size_t i=0; i<cube.shape(0); ++i)
@@ -197,15 +196,15 @@ template<typename T> class PyInterpolator
         auto subcube = subarray<3>(cube, {i,0,0,0},{0, MAXIDX, MAXIDX, MAXIDX});
         conv.deprepPsi(subcube);
         }
-      auto res = make_Pyarr<complex<T>>({Alm_Base::Num_Alms(lmax, lmax),ncomp});
+      auto res = make_Pyarr<complex<T>>({ncomp, Alm_Base::Num_Alms(lmax, lmax)});
       auto vslm = to_mav<complex<T>,2>(res, true);
       vslm.fill(T(0));
       if (separate)
         for (size_t i=0; i<ncomp; ++i)
           {
           auto planes = subarray<3>(cube, {i,0,0,0},{0, 1, MAXIDX, MAXIDX});
-          auto vslmi = subarray<2>(vslm, {0,i},{MAXIDX,1});
-          auto vblmi = subarray<2>(vblm, {0,i},{MAXIDX,1});
+          auto vslmi = subarray<2>(vslm, {i,0},{1,MAXIDX});
+          auto vblmi = subarray<2>(vblm, {i,0},{1,MAXIDX});
           conv.updateSlm(vslmi, vblmi, 0, planes);
           for (size_t k=1; k<kmax+1; ++k)
             {
@@ -244,17 +243,17 @@ following format:
 Error conditions are reported by raising exceptions.
 )""";
 
-constexpr const char *pyConvolverPlan_DS = R"""(
+constexpr const char *Py_ConvolverPlan_DS = R"""(
 Class encapsulating the low-level interface for convolution/interpolation.
 Computations are performed on double precision data.
 )""";
 
-constexpr const char *pyConvolverPlan_f_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_DS = R"""(
 Class encapsulating the low-level interface for convolution/interpolation.
 Computations are performed on single precision data.
 )""";
 
-constexpr const char *pyConvolverPlan_init_DS = R"""(
+constexpr const char *Py_ConvolverPlan_init_DS = R"""(
 ConvolverPlan constructor
 
 Parameters
@@ -278,7 +277,7 @@ nthreads : int 0 <= nthreads
     will be used.
 )""";
 
-constexpr const char *pyConvolverPlan_f_init_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_init_DS = R"""(
 ConvolverPlan constructor
 
 Parameters
@@ -302,25 +301,25 @@ nthreads : int 0 <= nthreads
     will be used.
 )""";
 
-constexpr const char *pyConvolverPlan_Ntheta_DS = R"""(
+constexpr const char *Py_ConvolverPlan_Ntheta_DS = R"""(
 Returns
 -------
 The full data cube dimension in theta direction (second axis)
 )""";
 
-constexpr const char *pyConvolverPlan_Nphi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_Nphi_DS = R"""(
 Returns
 -------
 The full data cube dimension in phi direction (third axis)
 )""";
 
-constexpr const char *pyConvolverPlan_Npsi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_Npsi_DS = R"""(
 Returns
 -------
 The full data cube dimension in psi direction (first axis)
 )""";
 
-constexpr const char *pyConvolverPlan_getPatchInfo_DS = R"""(
+constexpr const char *Py_ConvolverPlan_getPatchInfo_DS = R"""(
 Returns information necessary to extract a given sub-area from the data cube.
 
 Parameters
@@ -338,16 +337,16 @@ tuple(int) with 4 elements itheta_lo, itheta_hi, iphi_lo, iphi_hi
     specified patch.
 )""";
 
-constexpr const char *pyConvolverPlan_getPlane_DS = R"""(
+constexpr const char *Py_ConvolverPlan_getPlane_DS = R"""(
 Computes a single (real or complex) sub-plane in (theta, phi) of the data cube
 
 Parameters
 ----------
-slm : numpy.ndarray((nalm_sky), dtype=numpy.complex128), or
-      numpy.ndarray((nalm_sky, ncomp), dtype=numpy.complex128)
+slm : numpy.ndarray((nalm_sky,), dtype=numpy.complex128), or
+      numpy.ndarray((ncomp, nalm_sky), dtype=numpy.complex128)
     spherical harmonic coefficients of the sky.
-blm : numpy.ndarray((nalm_beam), dtype=numpy.complex128), or
-      numpy.ndarray((nalm_beam, ncomp), dtype=numpy.complex128)
+blm : numpy.ndarray((nalm_beam,), dtype=numpy.complex128), or
+      numpy.ndarray((ncomp, nalm_beam), dtype=numpy.complex128)
     spherical harmonic coefficients of the beam.
 mbeam : int, 0 <= mbeam <= kmax
     requested m moment of the beam
@@ -362,16 +361,16 @@ If the `slm` and `blm` arrays have a second dimension, the contributions of all
 components will be added together in `re` and `im`.
 )""";
 
-constexpr const char *pyConvolverPlan_f_getPlane_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_getPlane_DS = R"""(
 Computes a single (real or complex) sub-plane in (theta, phi) of the data cube
 
 Parameters
 ----------
-slm : numpy.ndarray((nalm_sky), dtype=numpy.complex64), or
-      numpy.ndarray((nalm_sky, ncomp), dtype=numpy.complex)
+slm : numpy.ndarray((nalm_sky,), dtype=numpy.complex64), or
+      numpy.ndarray((ncomp, nalm_sky), dtype=numpy.complex)
     spherical harmonic coefficients of the sky.
-blm : numpy.ndarray((nalm_beam), dtype=numpy.complex64), or
-      numpy.ndarray((nalm_beam, ncomp), dtype=numpy.complex)
+blm : numpy.ndarray((nalm_beam,), dtype=numpy.complex64), or
+      numpy.ndarray((ncomp, nalm_beam), dtype=numpy.complex)
     spherical harmonic coefficients of the beam.
 mbeam : int, 0 <= mbeam <= kmax
     requested m moment of the beam
@@ -386,7 +385,7 @@ If the `slm` and `blm` arrays have a second dimension, the contributions of all
 components will be added together in `re` and `im`.
 )""";
 
-constexpr const char *pyConvolverPlan_prepPsi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_prepPsi_DS = R"""(
 Pepares a data cube for for actual interpolation.
 
 Parameters
@@ -398,7 +397,7 @@ subcube : numpy.ndarray((Npsi(), :, :), dtype=numpy.float64)
     subsequent `interpol` calls.
 )""";
 
-constexpr const char *pyConvolverPlan_f_prepPsi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_prepPsi_DS = R"""(
 Pepares a data cube for for actual interpolation.
 
 Parameters
@@ -410,7 +409,7 @@ subcube : numpy.ndarray((Npsi(), :, :), dtype=numpy.float32)
     subsequent `interpol` calls.
 )""";
 
-constexpr const char *pyConvolverPlan_deprepPsi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_deprepPsi_DS = R"""(
 Adjoint of `prepPsi`.
 
 Parameters
@@ -421,7 +420,7 @@ subcube : numpy.ndarray((Npsi(), :, :), dtype=numpy.float64)
     `updateSlm` calls.
 )""";
 
-constexpr const char *pyConvolverPlan_f_deprepPsi_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_deprepPsi_DS = R"""(
 Adjoint of `prepPsi`.
 
 Parameters
@@ -432,7 +431,7 @@ subcube : numpy.ndarray((Npsi(), :, :), dtype=numpy.float32)
     `updateSlm` calls.
 )""";
 
-constexpr const char *pyConvolverPlan_interpol_DS = R"""(
+constexpr const char *Py_ConvolverPlan_interpol_DS = R"""(
 Computes the interpolated values for a given set of angle triplets
 
 Parameters
@@ -455,7 +454,7 @@ Repeated calls to this method are fine, but for good performance the
 number of pointings passed per call should be as large as possible.
 )""";
 
-constexpr const char *pyConvolverPlan_f_interpol_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_interpol_DS = R"""(
 Computes the interpolated values for a given set of angle triplets
 
 Parameters
@@ -478,7 +477,7 @@ Repeated calls to this method are fine, but for good performance the
 number of pointings passed per call should be as large as possible.
 )""";
 
-constexpr const char *pyConvolverPlan_deinterpol_DS = R"""(
+constexpr const char *Py_ConvolverPlan_deinterpol_DS = R"""(
 Adjoint of `interpol`.
 Spreads the values in `signal` over the appropriate regions of `cube`
 
@@ -503,7 +502,7 @@ Repeated calls to this method are fine, but for good performance the
 number of pointings passed per call should be as large as possible.
 )""";
 
-constexpr const char *pyConvolverPlan_f_deinterpol_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_deinterpol_DS = R"""(
 Adjoint of `interpol`.
 Spreads the values in `signal` over the appropriate regions of `cube`
 
@@ -528,19 +527,19 @@ Repeated calls to this method are fine, but for good performance the
 number of pointings passed per call should be as large as possible.
 )""";
 
-constexpr const char *pyConvolverPlan_updateSlm_DS = R"""(
+constexpr const char *Py_ConvolverPlan_updateSlm_DS = R"""(
 Updates a set of sky spherical hamonic coefficients resulting from adjoint
 interpolation.
 
 Parameters
 ----------
-slm : numpy.ndarray((nalm_sky), dtype=numpy.complex128), or
-      numpy.ndarray((nalm_sky, ncomp), dtype=numpy.complex128)
+slm : numpy.ndarray((nalm_sky,), dtype=numpy.complex128), or
+      numpy.ndarray((ncomp, nalm_sky), dtype=numpy.complex128)
     The deinterpolated spherical harmonic coefficients will be added to this
     array.
     Must be zeroed before the first call to `updateSlm`!
-blm : numpy.ndarray((nalm_beam), dtype=numpy.complex128), or
-      numpy.ndarray((nalm_beam, ncomp), dtype=numpy.complex128)
+blm : numpy.ndarray((nalm_beam,), dtype=numpy.complex128), or
+      numpy.ndarray((ncomp, nalm_beam), dtype=numpy.complex128)
     spherical harmonic coefficients of the beam.
 mbeam : int, 0 <= mbeam <= kmax
     requested m moment of the beam
@@ -554,19 +553,19 @@ If the `slm` and `blm` arrays have a second dimension, the `slm` will be
 computed in a fashion that is adjoint to `getPlane`.
 )""";
 
-constexpr const char *pyConvolverPlan_f_updateSlm_DS = R"""(
+constexpr const char *Py_ConvolverPlan_f_updateSlm_DS = R"""(
 Updates a set of sky spherical hamonic coefficients resulting from adjoint
 interpolation.
 
 Parameters
 ----------
-slm : numpy.ndarray((nalm_sky), dtype=numpy.complex64), or
-      numpy.ndarray((nalm_sky, ncomp), dtype=numpy.complex64)
+slm : numpy.ndarray((nalm_sky,), dtype=numpy.complex64), or
+      numpy.ndarray((ncomp, nalm_sky), dtype=numpy.complex64)
     The deinterpolated spherical harmonic coefficients will be added to this
     array.
     Must be zeroed before the first call to `updateSlm`!
-blm : numpy.ndarray((nalm_beam), dtype=numpy.complex64), or
-      numpy.ndarray((nalm_beam, ncomp), dtype=numpy.complex64)
+blm : numpy.ndarray((nalm_beam,), dtype=numpy.complex64), or
+      numpy.ndarray((ncomp, nalm_beam), dtype=numpy.complex64)
     spherical harmonic coefficients of the beam.
 mbeam : int, 0 <= mbeam <= kmax
     requested m moment of the beam
@@ -580,7 +579,7 @@ If the `slm` and `blm` arrays have a second dimension, the `slm` will be
 computed in a fashion that is adjoint to `getPlane`.
 )""";
 
-constexpr const char *pyinterpolator_DS = R"""(
+constexpr const char *Py_Interpolator_DS = R"""(
 Class encapsulating the convolution/interpolation functionality
 
 The class can be configured for interpolation or for adjoint interpolation, by
@@ -592,9 +591,9 @@ Constructor for interpolation mode
 
 Parameters
 ----------
-sky : numpy.ndarray((nalm_sky, ncomp), dtype=numpy.complex)
+sky : numpy.ndarray((ncomp, nalm_sky), dtype=numpy.complex)
     spherical harmonic coefficients of the sky. ncomp can be 1 or 3.
-beam : numpy.ndarray((nalm_beam, ncomp), dtype=numpy.complex)
+beam : numpy.ndarray((ncomp, nalm_beam), dtype=numpy.complex)
     spherical harmonic coefficients of the beam. ncomp can be 1 or 3
 separate : bool
     whether contributions of individual components should be added together.
@@ -711,65 +710,65 @@ void add_totalconvolve(py::module_ &msup)
 
   m.doc() = totalconvolve_DS;
 
-  using conv_d = PyConvolverPlan<double>;
-  py::class_<conv_d> (m, "ConvolverPlan", py::module_local(), pyConvolverPlan_DS)
-    .def(py::init<size_t, size_t, double, double, size_t>(), pyConvolverPlan_init_DS,
+  using conv_d = Py_ConvolverPlan<double>;
+  py::class_<conv_d> (m, "ConvolverPlan", py::module_local(), Py_ConvolverPlan_DS)
+    .def(py::init<size_t, size_t, double, double, size_t>(), Py_ConvolverPlan_init_DS,
       "lmax"_a, "kmax"_a, "sigma"_a, "epsilon"_a, "nthreads"_a=0)
-    .def("Ntheta", &conv_d::Ntheta, pyConvolverPlan_Ntheta_DS)
-    .def("Nphi", &conv_d::Nphi, pyConvolverPlan_Nphi_DS)
-    .def("Npsi", &conv_d::Npsi, pyConvolverPlan_Npsi_DS)
-    .def("getPatchInfo", &conv_d::pyGetPatchInfo, pyConvolverPlan_getPatchInfo_DS,
+    .def("Ntheta", &conv_d::Ntheta, Py_ConvolverPlan_Ntheta_DS)
+    .def("Nphi", &conv_d::Nphi, Py_ConvolverPlan_Nphi_DS)
+    .def("Npsi", &conv_d::Npsi, Py_ConvolverPlan_Npsi_DS)
+    .def("getPatchInfo", &conv_d::Py_getPatchInfo, Py_ConvolverPlan_getPatchInfo_DS,
       "theta_lo"_a, "theta_hi"_a, "phi_lo"_a, "phi_hi"_a)
-    .def("getPlane", &conv_d::pyGetPlane, pyConvolverPlan_getPlane_DS,
+    .def("getPlane", &conv_d::Py_getPlane, Py_ConvolverPlan_getPlane_DS,
       "slm"_a, "blm"_a, "mbeam"_a, "planes"_a)
-    .def("prepPsi", &conv_d::pyPrepPsi, pyConvolverPlan_prepPsi_DS, "subcube"_a)
-    .def("deprepPsi", &conv_d::pyDeprepPsi, pyConvolverPlan_prepPsi_DS, "subcube"_a)
-    .def("interpol", &conv_d::pyinterpol, pyConvolverPlan_interpol_DS,
+    .def("prepPsi", &conv_d::Py_prepPsi, Py_ConvolverPlan_prepPsi_DS, "subcube"_a)
+    .def("deprepPsi", &conv_d::Py_deprepPsi, Py_ConvolverPlan_prepPsi_DS, "subcube"_a)
+    .def("interpol", &conv_d::Py_interpol, Py_ConvolverPlan_interpol_DS,
       "cube"_a, "itheta0"_a, "iphi0"_a, "theta"_a, "phi"_a, "psi"_a, "signal"_a)
-    .def("deinterpol", &conv_d::pydeinterpol, pyConvolverPlan_deinterpol_DS,
+    .def("deinterpol", &conv_d::Py_deinterpol, Py_ConvolverPlan_deinterpol_DS,
       "cube"_a, "itheta0"_a, "iphi0"_a, "theta"_a, "phi"_a, "psi"_a, "signal"_a)
-    .def("updateSlm", &conv_d::pyUpdateSlm, pyConvolverPlan_updateSlm_DS,
+    .def("updateSlm", &conv_d::Py_updateSlm, Py_ConvolverPlan_updateSlm_DS,
       "slm"_a, "blm"_a, "mbeam"_a, "planes"_a);
-  using conv_f = PyConvolverPlan<float>;
-  py::class_<conv_f> (m, "ConvolverPlan_f", py::module_local(), pyConvolverPlan_f_DS)
-    .def(py::init<size_t, size_t, double, double, size_t>(), pyConvolverPlan_f_init_DS,
+  using conv_f = Py_ConvolverPlan<float>;
+  py::class_<conv_f> (m, "ConvolverPlan_f", py::module_local(), Py_ConvolverPlan_f_DS)
+    .def(py::init<size_t, size_t, double, double, size_t>(), Py_ConvolverPlan_f_init_DS,
       "lmax"_a, "kmax"_a, "sigma"_a, "epsilon"_a, "nthreads"_a=0)
-    .def("Ntheta", &conv_f::Ntheta, pyConvolverPlan_Ntheta_DS)
-    .def("Nphi", &conv_f::Nphi, pyConvolverPlan_Nphi_DS)
-    .def("Npsi", &conv_f::Npsi, pyConvolverPlan_Npsi_DS)
-    .def("getPatchInfo", &conv_f::pyGetPatchInfo, pyConvolverPlan_getPatchInfo_DS,
+    .def("Ntheta", &conv_f::Ntheta, Py_ConvolverPlan_Ntheta_DS)
+    .def("Nphi", &conv_f::Nphi, Py_ConvolverPlan_Nphi_DS)
+    .def("Npsi", &conv_f::Npsi, Py_ConvolverPlan_Npsi_DS)
+    .def("getPatchInfo", &conv_f::Py_getPatchInfo, Py_ConvolverPlan_getPatchInfo_DS,
       "theta_lo"_a, "theta_hi"_a, "phi_lo"_a, "phi_hi"_a)
-    .def("getPlane", &conv_f::pyGetPlane, pyConvolverPlan_f_getPlane_DS,
+    .def("getPlane", &conv_f::Py_getPlane, Py_ConvolverPlan_f_getPlane_DS,
       "slm"_a, "blm"_a, "mbeam"_a, "planes"_a)
-    .def("prepPsi", &conv_f::pyPrepPsi, pyConvolverPlan_f_prepPsi_DS, "subcube"_a)
-    .def("deprepPsi", &conv_f::pyDeprepPsi, pyConvolverPlan_f_deprepPsi_DS, "subcube"_a)
-    .def("interpol", &conv_f::pyinterpol, pyConvolverPlan_f_interpol_DS,
+    .def("prepPsi", &conv_f::Py_prepPsi, Py_ConvolverPlan_f_prepPsi_DS, "subcube"_a)
+    .def("deprepPsi", &conv_f::Py_deprepPsi, Py_ConvolverPlan_f_deprepPsi_DS, "subcube"_a)
+    .def("interpol", &conv_f::Py_interpol, Py_ConvolverPlan_f_interpol_DS,
       "cube"_a, "itheta0"_a, "iphi0"_a, "theta"_a, "phi"_a, "psi"_a, "signal"_a)
-    .def("deinterpol", &conv_f::pydeinterpol, pyConvolverPlan_f_deinterpol_DS,
+    .def("deinterpol", &conv_f::Py_deinterpol, Py_ConvolverPlan_f_deinterpol_DS,
       "cube"_a, "itheta0"_a, "iphi0"_a, "theta"_a, "phi"_a, "psi"_a, "signal"_a)
-    .def("updateSlm", &conv_f::pyUpdateSlm, pyConvolverPlan_f_updateSlm_DS,
+    .def("updateSlm", &conv_f::Py_updateSlm, Py_ConvolverPlan_f_updateSlm_DS,
       "slm"_a, "blm"_a, "mbeam"_a, "planes"_a);
 
-  using inter_d = PyInterpolator<double>;
-  py::class_<inter_d> (m, "Interpolator", py::module_local(), pyinterpolator_DS)
+  using inter_d = Py_Interpolator<double>;
+  py::class_<inter_d> (m, "Interpolator", py::module_local(), Py_Interpolator_DS)
     .def(py::init<const py::array &, const py::array &, bool, size_t, size_t, double, double, int>(),
       initnormal_DS, "sky"_a, "beam"_a, "separate"_a, "lmax"_a, "kmax"_a, "epsilon"_a, "ofactor"_a=1.5,
       "nthreads"_a=0)
     .def(py::init<size_t, size_t, size_t, double, double, int>(), initadjoint_DS,
       "lmax"_a, "kmax"_a, "ncomp"_a, "epsilon"_a, "ofactor"_a=1.5, "nthreads"_a=0)
-    .def ("interpol", &inter_d::pyinterpol, interpol_DS, "ptg"_a)
-    .def ("deinterpol", &inter_d::pydeinterpol, deinterpol_DS, "ptg"_a, "data"_a)
-    .def ("getSlm", &inter_d::pygetSlm, getSlm_DS, "beam"_a);
-  using inter_f = PyInterpolator<float>;
-  py::class_<inter_f> (m, "Interpolator_f", py::module_local(), pyinterpolator_DS)
+    .def ("interpol", &inter_d::Py_Interpol, interpol_DS, "ptg"_a)
+    .def ("deinterpol", &inter_d::Py_deinterpol, deinterpol_DS, "ptg"_a, "data"_a)
+    .def ("getSlm", &inter_d::Py_getSlm, getSlm_DS, "beam"_a);
+  using inter_f = Py_Interpolator<float>;
+  py::class_<inter_f> (m, "Interpolator_f", py::module_local(), Py_Interpolator_DS)
     .def(py::init<const py::array &, const py::array &, bool, size_t, size_t, float, float, int>(),
       initnormal_DS, "sky"_a, "beam"_a, "separate"_a, "lmax"_a, "kmax"_a, "epsilon"_a, "ofactor"_a=1.5f,
       "nthreads"_a=0)
     .def(py::init<size_t, size_t, size_t, float, float, int>(), initadjoint_DS,
       "lmax"_a, "kmax"_a, "ncomp"_a, "epsilon"_a, "ofactor"_a=1.5f, "nthreads"_a=0)
-    .def ("interpol", &inter_f::pyinterpol, interpol_DS, "ptg"_a)
-    .def ("deinterpol", &inter_f::pydeinterpol, deinterpol_DS, "ptg"_a, "data"_a)
-    .def ("getSlm", &inter_f::pygetSlm, getSlm_DS, "beam"_a);
+    .def ("interpol", &inter_f::Py_Interpol, interpol_DS, "ptg"_a)
+    .def ("deinterpol", &inter_f::Py_deinterpol, deinterpol_DS, "ptg"_a, "data"_a)
+    .def ("getSlm", &inter_f::Py_getSlm, getSlm_DS, "beam"_a);
   }
 
 }
